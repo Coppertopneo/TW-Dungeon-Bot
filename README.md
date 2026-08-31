@@ -42,13 +42,17 @@ The default navigation server address used by the script is:
 
 ## Install
 
-Copy:
+Download or copy:
 
 ```text
-src/_TW_DungeonBot_v0.1.8.lua
+_TW_DungeonBot_v0.1.8.lua
 ```
 
-into the WardenGG script folder.
+into the WardenGG script folder, for example:
+
+```text
+C:\WGG\
+```
 
 Only one TW Dungeon Bot controller should be loaded at a time.
 
