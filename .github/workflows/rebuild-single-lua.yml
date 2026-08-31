@@ -1,0 +1,41 @@
+name: Rebuild single Lua source
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rebuild-single-lua.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild v0.1.8 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat src/parts/_TW_DungeonBot_v0.1.8.lua.b64.* | tr -d '\r\n' | base64 -d > src/_TW_DungeonBot_v0.1.8.lua
+          expected='fc9e29ab3d825660ef931afb52c906baec52dbc507beb0e5fb527eb8e3820826'
+          actual="$(sha256sum src/_TW_DungeonBot_v0.1.8.lua | awk '{print $1}')"
+          echo "Expected SHA256: $expected"
+          echo "Actual SHA256:   $actual"
+          test "$actual" = "$expected"
+          test "$(wc -c < src/_TW_DungeonBot_v0.1.8.lua)" -eq 70708
+
+      - name: Replace temporary parts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -r src/parts
+          git add src/_TW_DungeonBot_v0.1.8.lua
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Replace split source with single v0.1.8 Lua file'
+          git push
