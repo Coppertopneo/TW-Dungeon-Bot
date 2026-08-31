@@ -4,22 +4,36 @@ Experimental World of Warcraft Retail Timewalking dungeon controller built for W
 
 ## Current version
 
-`v0.1.8-loot-scope-fix`
+`v0.2.2-combat-safety`
+
+Main source:
+
+```text
+_TW_DungeonBot_v0.2.2.lua
+```
+
+The older `v0.1.8` file may remain in the repository as a rollback build while the newer movement system is tested.
 
 ## Current feature set
 
 - Detects the active Timewalking random-dungeon queue
-- Detects current specialization role automatically
+- Detects the current specialization role automatically
   - Tank -> Tank
   - Healer -> Healer
   - Damager -> DPS
-- Queues through Blizzard's current Dungeon Finder UI path
+- Queues through Blizzard's Dungeon Finder flow
 - Automatically accepts LFG proposals
 - Detects when the matched dungeon is in progress
 - Detects the party tank
-- Follows the tank using WardenGG navigation
-- Uses a direct-follow fallback when native ground movement stalls
-- Uses a tank-leash recovery system if combat causes separation
+- Records the tank's movement as a breadcrumb trail
+- Follows the recorded breadcrumb route instead of constantly chasing the tank's live position
+- Preserves corners so combat stalls are less likely to cause wall-cutting shortcuts
+- Tank following does **not** require Warden Navigation Server in the current direct-breadcrumb mode
+- Retains the route while combat temporarily prevents movement
+- Includes tank-leash recovery if the group starts getting away
+- Includes water/submerged recovery with pitch and ascend/descend controls
+- Maintains safer combat spacing instead of standing directly on the tank
+- Detects nearby WardenGG AreaTriggers during combat and attempts to move out of dangerous ground effects
 - Assists the tank's hostile target for an external combat rotation
 - Opportunistically detects and interacts with nearby lootable corpses
 - Detects dungeon completion
@@ -30,22 +44,20 @@ Experimental World of Warcraft Retail Timewalking dungeon controller built for W
 
 - World of Warcraft Retail
 - WardenGG Extended Lua Unlocker
-- WardenGG Navigation Server
-- Matching MMAP/VMAP navigation data
-- An external combat rotation if automated ability use is desired
+- An external combat rotation if automated class/spec ability use is desired
 
-The default navigation server address used by the script is:
+### Navigation Server
 
-```text
-127.0.0.1:47110
-```
+Warden Navigation Server is **not required for the active v0.2.2 tank-follow system**. The follower records positions the tank physically walked through and directly moves through those breadcrumbs.
+
+Some older navigation helpers remain in the source for diagnostics, rollback work, and future dungeon-specific movement handling.
 
 ## Install
 
 Download or copy:
 
 ```text
-_TW_DungeonBot_v0.1.8.lua
+_TW_DungeonBot_v0.2.2.lua
 ```
 
 into the WardenGG script folder, for example:
@@ -61,42 +73,49 @@ Only one TW Dungeon Bot controller should be loaded at a time.
 ```text
 /twbot
 ```
-
 Toggle the controller.
 
 ```text
 /twscan
 ```
-
-Print the available random Dungeon Finder entries and selected Timewalking queue.
+Print available random Dungeon Finder entries and the selected Timewalking queue.
 
 ```text
 /twstate
 ```
-
-Print queue, proposal, dungeon, navigation, and tank state.
+Print current queue/dungeon/controller state.
 
 ```text
 /twqueue
 ```
-
 Print Dungeon Finder queue diagnostics.
 
 ```text
 /twfollow
 ```
+Print tank-follow diagnostics.
 
-Print tank-follow and navigation diagnostics.
+```text
+/twtrail
+```
+Print breadcrumb-trail state, cursor, target point, and movement information.
 
 ```text
 /twloot
 ```
-
 Print nearest-lootable-corpse diagnostics.
 
-## Current behavior
+```text
+/twwater
+```
+Print swimming/submerged recovery state and vertical breadcrumb information.
 
-The tested loop is:
+```text
+/twdanger
+```
+Print combat spacing and nearby AreaTrigger danger information.
+
+## Current behavior
 
 ```text
 find Timewalking queue
@@ -104,25 +123,59 @@ find Timewalking queue
 -> queue
 -> accept proposal
 -> enter dungeon
--> detect/follow tank
--> assist combat target
+-> identify tank
+-> continuously record tank breadcrumbs
+-> follow saved route
+-> recover after combat movement stalls
+-> recover through water/swimming sections
+-> maintain combat spacing
+-> evade detected dangerous AreaTriggers
+-> assist external combat rotation
 -> opportunistically loot
 -> detect dungeon completion
 -> leave instance group
 -> requeue
 ```
 
+## Movement design
+
+The newer follower intentionally avoids treating the tank's current coordinates as the route.
+
+Instead:
+
+```text
+Tank: A -> B -> C -> CORNER -> D -> E
+Bot:  A -> B -> C -> CORNER -> D -> E
+```
+
+If combat holds the player back, the saved breadcrumbs remain queued while the tank continues recording points ahead. When movement becomes available again, the controller resumes the saved route rather than attempting a straight-line shortcut through walls or around the wrong side of a corner.
+
+## Combat safety
+
+Default combat spacing is currently approximately:
+
+```text
+DAMAGER: 5.5 yd from tank
+HEALER:  10 yd from tank
+```
+
+During combat the bot also scans WardenGG AreaTrigger objects. When it believes the player is inside a hostile or unknown ground-effect radius, it temporarily moves outward, then resumes the same breadcrumb route after clearing the area.
+
+AreaTrigger classification is still experimental. Some mechanics may require spell-specific allow/ignore lists after live testing.
+
 ## Known limitations
 
-This is still experimental.
+This project is still experimental.
 
-- Dungeon-specific mechanics are not explicitly scripted.
-- Tank skips, jumps, teleports, elevators, vehicles, and unusual geometry can still break following.
-- Combat and movement can compete for control depending on the external rotation.
-- Looting is intentionally conservative so it does not abandon the tank.
-- Death recovery is not a complete unattended ghost-run system.
-- Navigation quality depends heavily on available MMAP/VMAP data.
-- Some dungeon endpoints or moving targets may produce invalid or short-lived paths.
+- Dungeon-specific mechanics are not fully scripted
+- Jumps, teleports, elevators, vehicles, knockbacks, scripted transports, and unusual geometry can still need special handling
+- Water recovery is newly implemented and needs broader dungeon testing
+- Ground-effect avoidance only covers mechanics represented as detectable AreaTriggers
+- Friendly/hostile AreaTrigger classification may produce false positives until specific spell IDs are observed in live runs
+- External combat rotations can still compete with movement controls
+- Looting is intentionally conservative so it does not abandon the group
+- Death recovery is not yet a complete unattended ghost-run system
+- Tank-role dungeon traversal is not equivalent to follower mode because there may be no other tank to follow
 
 ## Account warning
 
