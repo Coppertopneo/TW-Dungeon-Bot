@@ -39,3 +39,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Replace split source with single v0.1.8 Lua file'
           git push
+
+# temporary one-shot rebuild workflow
