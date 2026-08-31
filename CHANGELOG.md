@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.2.2
+- Added safer combat spacing so the follower does not remain directly on top of the tank.
+- Default combat spacing is approximately 5.5 yd for DAMAGER and 10 yd for HEALER.
+- Added WardenGG AreaTrigger scanning during combat.
+- Added temporary movement out of detected dangerous ground-effect radii.
+- Preserves the breadcrumb cursor while evading danger, then resumes the recorded route.
+- Added `/twdanger` diagnostics.
+
+## v0.2.1
+- Added swimming/submerged recovery.
+- Added pitch control toward 3D breadcrumbs while swimming.
+- Added protected ascend/descend movement handling.
+- Added short emergency ascent behavior when stalled in water.
+- Added `/twwater` diagnostics.
+
+## v0.2.0
+- Removed Navigation Server as a requirement for active tank following.
+- Changed tank following to direct breadcrumb movement.
+- Tightened breadcrumb spacing and lookahead for better corner preservation.
+- Retained the same breadcrumb during short movement stalls instead of chasing the tank's live position.
+
+## v0.1.9
+- Added tank breadcrumb tracing.
+- Recorded the route the tank physically walked so combat separation could preserve corners and previous path history.
+- Added corner detection and must-visit route points.
+- Added `/twtrail` diagnostics.
+- Initial breadcrumb implementation still depended on Warden Navigation Server for movement.
+
 ## v0.1.8
 - Fixed loot-controller Lua scope error.
 - Replaced early `playerInCombat()` call with direct `UnitAffectingCombat("player")` check.
